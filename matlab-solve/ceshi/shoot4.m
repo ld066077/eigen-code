@@ -1,7 +1,7 @@
 function tt = shootev()
     format long;
     tol = 1.5e-4;
-    m = 8;
+    m = 12;
     omg_log = zeros(1, m);
 
     % 静默配置ODE求解器选项
@@ -64,7 +64,7 @@ function tt = shootev()
    % 组合图（对每个k值求解ODE *一次*，使用存储的k值）
     composite_fig = figure('Visible', 'off');
     hold on;
-    colors = ['r', 'g', 'b', 'c', 'm', 'y', 'k', 'w'];
+    colors = ['r', 'g', 'b', 'c', 'm', 'y', 'k', 'w', 'r', 'g', 'b', 'c', 'm', 'y', 'k', 'w'];
     for n = 1:m
         % 为*存储的*k值创建函数句柄
         evfun_handle = @(x, Er) evfun(x, Er, omg_log(n));
