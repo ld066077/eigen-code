@@ -1,7 +1,7 @@
 function tt = shootev()
     format long;
     tol = 1.5e-4;
-    m = 1;
+    m = 8;
     omg_log = zeros(1, m);
 
     % 静默配置ODE求解器选项
@@ -12,12 +12,12 @@ function tt = shootev()
         mkdir('plots');
     end
 
-    omega_initial = 1.0; % k的初始值
-    deri = 1;
+    omega_initial = 0.36; % k的初始值
+    deri = 0.01;
 
     for n = 1:m  % 计算前m个特征值
         omega = omega_initial;
-        domg = omega / 100;
+        domg = omega / 30;
         % domg = 0.01;
         omega = omega + domg;
 
