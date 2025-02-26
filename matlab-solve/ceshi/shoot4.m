@@ -13,7 +13,7 @@ function tt = shootev()
     end
 
     omega_initial = 0.35; % k的初始值
-    deri = 0.000001;
+    deri = 0.000000000001;
 
     for n = 1:m  % 计算前m个特征值
         omega = omega_initial;
