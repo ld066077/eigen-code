@@ -42,6 +42,7 @@ function tt = shootev()
             disp(omega);
             display(domg);
             display(dEr);
+            outputD(1, omega);
         end
         omg_log(n) = omega;  % 存储特征值
         omega_initial = omega; % 关键：用于下一次循环迭代
@@ -111,12 +112,9 @@ function tt = shootev()
         OmegaASq = @(x) T(x) ./ (2*q(x).^2);
         OmegaGSq = @(x) T(x) .* (1 + 1./(2*q(x).^2));
         NumeratorDrd = @(omg_val, x) (omg_val^2 - OmegaASq(x)) .* (omg_val^2 - OmegaGSq(x));
-        % DenominatorDrd = @(omg_val, x) 2*(gammai + tau)*T(x).^2.*omg_val^2 + 1e-6;
-        DD = NumeratorDrd(omg_val, x);
+        DenominatorDrd = @(omg_val, x) 2*(gammai + tau)*T(x).^2.*omg_val^2 + 1e-6;
+        Drd = @(omg_val, x) NumeratorDrd(omg_val, x) ./ DenominatorDrd(omg_val, x);
+        DD = Drd(omg_val, x);
         display(DD);
-        % Drd = @(omg_val, x) NumeratorDrd(omg_val, x) ./ DenominatorDrd(omg_val, x);
-
-        % DD = [Er(2);
-        % (4/(rho0^2)) * Drd(omg_val, x) * Er(1)];
     end
 end
