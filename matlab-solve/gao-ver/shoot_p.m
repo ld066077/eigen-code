@@ -9,7 +9,7 @@ function tt = shootev()
         mkdir('plots');
     end
 
-    omega_initial = 1.443569123412118 + 0.000010666666667i; % k的初始值
+    omega_initial = 1.443569123412118 + 0.000010666666667i;%1.443569123412118 + 0.000010666666667i; % k的初始值
     deri = 0.0001 + 0.00000001i;
 
     omega = omega_initial;
