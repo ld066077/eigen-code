@@ -19,7 +19,7 @@ function tt = shootev()
         omega = fsolve(objective_fun, omega_initial, optimoptions('fsolve', 'Display', 'iter', 'FunctionTolerance', tol, 'StepTolerance', tol));
 
         omg_log(n) = omega;
-        omega_initial = omega;  % 更新为下一个特征值
+        omega_initial = omega;  % 更新为下一个特征值 +domg
 
         % 使用找到的特征值*一次*求解ODE
         [x, Er] = ode15s(@(x, Er) evfun(x, Er, omega), [0, 1], [0, deri], options);
