@@ -17,7 +17,7 @@ function tt = shootev()
 
     for n = 1:m  % 计算前m个特征值  %加上边界值差值/边界值 作为误差限 large then max iter then iter+1
         omega = omega_initial;
-        domg = omega / 30;
+        domg = omega / 30; %仍为复数
         % domg = 0.01;
         omega = omega + domg;
 
@@ -34,7 +34,7 @@ function tt = shootev()
             [x, Er] = ode15s(evfun_handle, [0, 1], [0, deri], options);
             dEr = Er(end, 1);
 
-            if real(dEr) * real(oldEr) < 0 % 分别检查实部虚部
+            if real(dEr) * real(oldEr) < 0 % 分别检查实部虚部，逻辑错误，函数值与omg实部虚部不对应
                 omega = omega - real(domg);
                 domg = complex(real(domg)/2, imag(domg));
             end
