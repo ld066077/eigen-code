@@ -4,63 +4,48 @@ function tt = shootev()
     m = 12;
     omg_log = zeros(1, m) + 1i * zeros(1, m);
 
-    % 静默配置ODE求解器选项
-    options = odeset('AbsTol', 1e-8, 'RelTol', 1e-8); %精度
+    % fsolve 的选项 (可以根据需要调整)
+    options = optimoptions('fsolve', 'Display', 'iter', 'FunctionTolerance', tol, ...
+        'StepTolerance', tol, 'Algorithm', 'trust-region-dogleg'); % 使用 trust-region-dogleg 算法
 
     % 如果不存在，则创建plots目录
     if ~exist('plots', 'dir')
         mkdir('plots');
     end
 
-    omega_initial = 1.35 + 0.00001i; % k的初始值
-    deri = 0.0001 + 0.00001i; % 初始导数可能需要调整
+    omega_initial = 1.35 + 0.00001i; % 初始猜测
+    deri = 0.0001 + 0.00001i;       % 初始导数
+
+    % ODE 求解器的选项 (可以根据需要调整)
+    ode_options = odeset('AbsTol', 1e-8, 'RelTol', 1e-8);
+
+      tspan = [-0.999, 0.999]; %避免奇点
 
     for n = 1:m  % 计算前m个特征值
-        omega = omega_initial;
-        domg = omega / 30;
-        omega = omega + domg;
 
-        % 使用匿名函数将omega传递给evfun
-        evfun_handle = @(t, Er) evfun(t, Er, omega); % t 是新变量
-        tspan = [-0.999, 0.999]; % 避免奇点
-        fprintf('------1\n');
-        [t, Er] = ode15s(evfun_handle, tspan, [0, deri], options); %导数
-        fprintf('------2\n');
-        oldEr = Er(end, 1);
-        dEr = oldEr;
+        % 使用 fsolve 求解
+        objective_fun = @(omega) shooting_objective(omega, deri, tspan, ode_options);
+        [omega, fval, exitflag] = fsolve(objective_fun, omega_initial, options);
 
-        while abs(dEr) > tol
-            omega = omega + domg;
-            % 使用新的omega更新函数句柄
-            evfun_handle = @(t, Er) evfun(t, Er, omega);
-            [t, Er] = ode15s(evfun_handle, tspan, [0, deri], options);
-            dEr = Er(end, 1);
-            if real(dEr) * real(oldEr) < 0 % 分别检查实部虚部
-                omega = omega - real(domg);
-                domg = real(domg) / 2 + imag(domg) * 1i;
-            end
-            if imag(dEr) * imag(oldEr) < 0
-                omega = omega - imag(domg);
-                domg = imag(domg) / 2 + real(domg);
-            end
-
-            fprintf('------\n');
-            display(omega);
-            display(domg);
-            display(dEr);
-
+        if exitflag <= 0
+            warning('fsolve did not converge for n = %d.  exitflag = %d', n, exitflag);
         end
-        omg_log(n) = omega;  % 存储特征值
-        omega_initial = omega;
 
-        % 绘图并保存（使用存储的t和Er）
+
+        omg_log(n) = omega;  % 存储特征值
+        omega_initial = omega + 0.1 + 0.01i;  % 更新初始猜测.  重要：防止fsolve找到同一个根。
+
+
+        % 使用找到的特征值求解 ODE，以获取特征函数
+        [t, Er] = ode15s(@(t, Er) evfun(t, Er, omega), tspan, [0, deri], ode_options);
+        x = atanh(t);
+
+        % 绘图并保存
         fig = figure('Visible', 'off');
-        x = atanh(t); % 反变换到 x
-        %Er(:, 1) = Er(:, 1) / max(abs(Er(:, 1))); %归一化，可能不需要
         plot(x, real(Er(:, 1)), 'LineWidth', 1.5, 'DisplayName', 'Real');
         hold on;
         plot(x, imag(Er(:, 1)), 'LineWidth', 1.5, 'DisplayName', 'Imag');
-        title(sprintf('omega=%.4f + %.4fi', real(omega), imag(omega)));
+        title(sprintf('omega = %.6f + %.6fi', real(omega), imag(omega)));
         xlabel('x');
         ylabel('Er(x)');
         legend('show');
@@ -68,25 +53,24 @@ function tt = shootev()
         saveas(fig, fullfile('plots', sprintf('eigenfunc_%d.png', n)));
         close(fig);
     end
+
     tt = omg_log;
     disp(tt);
 
-
-    % 组合图
+    % 组合图 (与之前相同)
     composite_fig = figure('Visible', 'off');
     hold on;
-    colors = ['r', 'g', 'b', 'c', 'm', 'y', 'k', 'r', 'g', 'b', 'c', 'm','y','k']; %
+     colors = ['r', 'g', 'b', 'c', 'm', 'y', 'k', 'r', 'g', 'b', 'c', 'm','y','k']; %
     for n = 1:m
-        evfun_handle = @(t, Er) evfun(t, Er, omg_log(n));
-        [t, Er] = ode15s(evfun_handle, tspan, [0, deri], options);
-         x = atanh(t);
-        %Er(:, 1) = Er(:, 1) / max(abs(Er(:, 1)));  % 归一化, 可能不需要
+        [t, Er] = ode15s(@(t, Er) evfun(t, Er, omg_log(n)), tspan, [0, deri], ode_options);
+        x = atanh(t);
+        %Er(:, 1) = Er(:, 1) / max(abs(Er(:, 1)));  % Normalization, optional
         plot(x, real(Er(:, 1)), colors(n), 'LineWidth', 1.2, ...
             'DisplayName', sprintf('Re(omega)=%.4f', real(omg_log(n))));
-        plot(x, imag(Er(:, 1)), [colors(n), '--'], 'LineWidth', 1.2, ...  % Dashed line
+        plot(x, imag(Er(:, 1)), [colors(n), '--'], 'LineWidth', 1.2, ...
             'DisplayName', sprintf('Im(omega)=%.4f', imag(omg_log(n))));
     end
-    title('组合特征函数');
+    title('Combined Eigenfunctions');
     xlabel('x');
     ylabel('Er(x)');
     legend('show', 'Location', 'best');
@@ -95,9 +79,21 @@ function tt = shootev()
     close(composite_fig);
 
 
-    % 嵌套函数 (使用 t 作为自变量)
+    % --------------------------------------------------------
+    % 嵌套函数：shooting_objective (残差函数)
+    % --------------------------------------------------------
+    function residual = shooting_objective(omega, deri, tspan, ode_options)
+        [~, Er] = ode15s(@(t, Er) evfun(t, Er, omega), tspan, [0, deri], ode_options);
+        residual = Er(end, 1);          % 残差是边界处的值
+        residual = [real(residual); imag(residual)]; % 分离实部和虚部
+    end
+
+
+    % --------------------------------------------------------
+    % 嵌套函数：evfun (ODE 定义) (与之前相同)
+    % --------------------------------------------------------
     function yy = evfun(t, Er, omg_val)
-        x = atanh(t); % 将 t 转换回 x
+      x = atanh(t); % 将 t 转换回 x
         Zdf = @(zeta_val) -2*dawson(zeta_val) + 1i*sqrt(pi)*exp(-zeta_val.^2);
         rho0 = 0.01;
         tau = 1.0;
@@ -138,10 +134,10 @@ function tt = shootev()
             (2.0*zeta_val*(1.0+tau*(1.0-zeta_val*Q0))) )/(1.0+tau*(1.0-zeta_val*Q0));
 
         a3 = 2.0*Gexpr/(Aexpr+q(x)^2*Bexpr);
-
         % 应用变换后的导数
         dxdt = 1 - t^2;
         yy = [Er(2); ...
             -a3/a1 * Er(1) / dxdt^2 + 2*t*Er(2)/dxdt];  % 修正的方程
     end
+
 end
