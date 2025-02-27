@@ -34,7 +34,7 @@ function tt = shootev()
             [x, Er] = ode15s(evfun_handle, [0, 1], [0, deri], options);
             dEr = Er(end, 1);
 
-            if real(dEr) * real(oldEr) < 0 % 分别检查实部虚部，逻辑错误，函数值与omg实部虚部不对应；统一改变实部虚部仅能在对角线上进行搜索，不能进行有效二维平面搜索
+            if real(dEr) * real(oldEr) < 0 % 分别检查实部虚部，逻辑错误，函数值与omg实部虚部不对应；统一改变实部虚部仅能在对角线上进行搜索，不能进行有效二维平面搜索；必须分别进行二分
                 omega = omega - real(domg);
                 domg = complex(real(domg)/2, imag(domg));
             end
