@@ -36,11 +36,11 @@ function tt = shootev()
 
             if real(dEr) * real(oldEr) < 0 % 分别检查实部虚部
                 omega = omega - real(domg);
-                domg = real(domg) / 2 + imag(domg) * 1i;
+                domg = complex(real(domg)/2, imag(domg));
             end
             if imag(dEr) * imag(oldEr) < 0
-                omega = omega - imag(domg);
-                domg = imag(domg) / 2 + real(domg);
+                omega = omega - complex(0,imag(domg));
+                domg = complex(real(domg), imag(domg)/2);
             end
             fprintf('------\n');
             display(omega);
