@@ -15,7 +15,7 @@ function tt = shootev()
 
     for n = 1:m
         % 使用 fsolve 进行根查找
-        objective_fun = @(omega) shooting_objective(omega, deri, options);
+        objective_fun = @(omega) shooting_objective(omega, deri, options); % 嵌套函数，减少计算量，计算evfun时omega为定值
         omega = fsolve(objective_fun, omega_initial, optimoptions('fsolve', 'Display', 'iter', 'FunctionTolerance', tol, 'StepTolerance', tol));
 
         omg_log(n) = omega;
