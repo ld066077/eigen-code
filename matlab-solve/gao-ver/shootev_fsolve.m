@@ -9,7 +9,7 @@ function tt = shootev()
         mkdir('plots');
     end
 
-    omega_initial = 1.8 + 0.001i;
+    omega_initial = 1.8 - 0.001i;
     deri = 0.0001 + 0.00001i;
     options = odeset('AbsTol', 1e-8, 'RelTol', 1e-8, 'OutputFcn',[]); % 'OutputFcn',[] 抑制输出
 

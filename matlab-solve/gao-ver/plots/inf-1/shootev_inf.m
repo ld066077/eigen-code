@@ -6,15 +6,15 @@ function tt = shootev()
 
     % fsolve 的选项 (可以根据需要调整)
     options = optimoptions('fsolve', 'Display', 'iter', 'FunctionTolerance', tol, ...
-        'StepTolerance', tol, 'Algorithm', 'levenberg-marquardt'); % 使用 trust-region-dogleg 算法
+        'StepTolerance', tol, 'Algorithm', 'trust-region-dogleg'); % 使用 trust-region-dogleg 算法
 
     % 如果不存在，则创建plots目录
     if ~exist('plots', 'dir')
         mkdir('plots');
     end
 
-    omega_initial = 1.55 - 0.001i; % 初始猜测
-    deri = 0.000001 + 0.000001i;       % 初始导数
+    omega_initial = 1.35 + 0.00001i; % 初始猜测
+    deri = 0.0001 + 0.00001i;       % 初始导数
 
     % ODE 求解器的选项 (可以根据需要调整)
     ode_options = odeset('AbsTol', 1e-8, 'RelTol', 1e-8);
@@ -33,7 +33,7 @@ function tt = shootev()
 
 
         omg_log(n) = omega;  % 存储特征值
-        omega_initial = omega + 0.1 + 0.00005i;  % 更新初始猜测.  重要：防止fsolve找到同一个根。
+        omega_initial = omega + 0.1 + 0.01i;  % 更新初始猜测.  重要：防止fsolve找到同一个根。
 
 
         % 使用找到的特征值求解 ODE，以获取特征函数
