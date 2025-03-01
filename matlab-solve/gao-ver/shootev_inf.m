@@ -107,7 +107,7 @@ function tt = shootev()
         zeta_val = q*omg_val/(sqrt(T)*2.0);
         Zdf = -2*dawson(zeta_val) + 1i*sqrt(pi)*exp(-zeta_val.^2);
         R0 = -1.0/2.0*Zdf;
-
+        zeta_val = q*omg_val/sqrt(T);
         rho = sqrt(T)*rho0;
         a1 = rho*rho;
 

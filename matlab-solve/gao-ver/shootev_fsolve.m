@@ -71,17 +71,21 @@ function tt = shootev()
 
     function yy = evfun(x, Er, omg_val)
         % 预先计算依赖于 x 和 omg_val 的量
-        Zdf = @(zeta_val) -2*dawson(zeta_val) + 1i*sqrt(pi)*exp(-zeta_val.^2);
         rho0 = 0.01;
         tau = 1.0;
-        q = @(x) 1.05 + 4*x.^2;
-        T = @(x) 0.2 + 0.8*(1 - x.^2).^2;
+        q = 1.05 + 4*x.^2;
+        T = 0.2 + 0.8*(1 - x.^2).^2;
 
-        rho = sqrt(T(x))*rho0;
+        zeta_val = q*omg_val/sqrt(T);
+        Zdf = -2*dawson(zeta_val) + 1i*sqrt(pi)*exp(-zeta_val.^2);
+        Q0 = -Zdf;
+
+        zeta_val = q*omg_val/(sqrt(T)*2.0);
+        Zdf = -2*dawson(zeta_val) + 1i*sqrt(pi)*exp(-zeta_val.^2);
+        R0 = -1.0/2.0*Zdf;
+        zeta_val = q*omg_val/sqrt(T);
+        rho = sqrt(T)*rho0;
         a1 = rho*rho;
-        zeta_val = q(x)*omg_val/sqrt(T(x));
-        Q0 = -Zdf(zeta_val);
-        R0 = -1.0/2.0*Zdf(zeta_val/2.0);
         Q1 = -zeta_val+zeta_val^2*Q0;
         Q2 = -1.0/2.0*zeta_val+zeta_val^2*Q1;
         Q3 = Q2*zeta_val^2-3.0/4.0*zeta_val;
@@ -96,9 +100,9 @@ function tt = shootev()
             (Q3+3.0*Q2/2.0+3.0*Q1/2.0+3.0*Q0/4.0);
         lexpr4 = 4.0*(R4+2.0*R3+3.0*R2+3.0*R1+3.0*R0/2.0)- ...
             (Q4+2.0*Q3+3.0*Q2+3.0*Q1+3.0*Q0/2.0);
-        Gexpr = 1.0/q(x)^2-1.0/zeta_val*(Q2+Q1+Q0/2.0)- ...
+        Gexpr = 1.0/q^2-1.0/zeta_val*(Q2+Q1+Q0/2.0)- ...
             tau*(Q1+Q0/2.0)^2/(1.0+tau*(1.0-zeta_val*Q0));
-        Aexpr = 3.0/(4.0*q(x)^2)-1.0/zeta_val*(Q2+2.0*Q1+ ...
+        Aexpr = 3.0/(4.0*q^2)-1.0/zeta_val*(Q2+2.0*Q1+ ...
             3.0*Q0/2.0)-tau*(Q1+Q0/2.0)*(2.0*(Q1+Q0)+zeta_val*Q0* ...
             (Q1+Q0/2.0)/(1.0+tau*(1.0-zeta_val*Q0)))/(1.0+tau*(1.0-zeta_val*Q0));
         Bexpr = lexpr4/(2.0*zeta_val^3)+tau*lexpr2*lexpr2/(2.0*zeta_val^2* ...
@@ -109,7 +113,7 @@ function tt = shootev()
             tau*(1.0-zeta_val*Q0))) + tau*(Q1+Q0/2.0)*(Q2+Q1+Q0/2.0)/ ...
             (2.0*zeta_val*(1.0+tau*(1.0-zeta_val*Q0))) )/(1.0+tau*(1.0-zeta_val*Q0));
 
-        a3 = 2.0*Gexpr/(Aexpr+q(x)^2*Bexpr);
+        a3 = 2.0*Gexpr/(Aexpr+q^2*Bexpr);
 
         yy = [Er(2); -a3/a1 * Er(1)];
     end
