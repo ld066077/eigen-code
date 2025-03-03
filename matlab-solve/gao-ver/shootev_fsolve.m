@@ -1,4 +1,4 @@
-function tt = shootev()
+function tt = shootev_fsolve()
     format long;
     tol = 1.5e-4;
     m = 1;

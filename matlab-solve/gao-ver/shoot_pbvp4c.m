@@ -1,6 +1,6 @@
-function tt = shootev()
+function tt = shoot_pbvp4c()
     format long;
-    tol = 1.5e-4;
+    % tol = 1.5e-4;
 
     % 如果不存在，则创建plots目录
     if ~exist('plots', 'dir')

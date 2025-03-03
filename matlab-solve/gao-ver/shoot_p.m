@@ -1,6 +1,6 @@
-function tt = shootev()
+function tt = shoot_p()
     format long;
-    tol = 1.5e-4;
+    % tol = 1.5e-4;
     % 静默配置ODE求解器选项
     options = odeset('AbsTol', 1e-8, 'RelTol', 1e-8); %精度
 
