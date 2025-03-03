@@ -6,66 +6,124 @@ function shootev_search2d()
         mkdir('plots');
     end
 
-    % 定义实部 虚部 参数扫描范围
-    realomg = linspace(1.76, 1.94, 3);
-    imagomg = linspace(-4.2e-2, -1.5e-2, 2);
+    % 定义参数扫描范围
+    realomg = linspace(1.76, 1.94, 30);    % 实部扫描范围
+    imagomg = linspace(-4.2e-2, -1.5e-2,30); % 虚部扫描范围
     [Re, Im] = meshgrid(realomg, imagomg);    % 生成网格
     
-    % 初始化存储矩阵
-    residual_values = zeros(size(Re));
+    % 将二维网格展平为一维数组以便并行处理
+    omega_list = Re(:) + 1i*Im(:);
+    total_points = numel(omega_list);
+    residual_flat = zeros(total_points, 1);
     
     % ODE求解参数
     deri = 0.0001 + 0.00001i;
     options = odeset('AbsTol', 1e-8, 'RelTol', 1e-8);
 
-    % 遍历所有网格点
-    for i = 1:size(Re, 1)
-        for j = 1:size(Re, 2)
-            % 构造当前复数频率
-            current_omega = Re(i,j) + 1i*Im(i,j);
-            
-            % 计算目标函数值（使用残差的模）
-            residual = shooting_objective(current_omega, deri, options);
-            residual_values(i,j) = norm(residual); % 计算残差的2-范数
-        end
-        fprintf('已完成 %.1f%%\n', 100*i/size(Re,1)); % 进度显示
+    % 启动并行池
+    if isempty(gcp('nocreate'))
+        parpool; % 根据系统核心数自动分配
     end
 
-    % ========== 三维可视化 ==========
-    fig = figure('Position', [100 100 1200 800]);
-    
-    % 曲面图
-    subplot(2,2,[1 3]);
-    surf(Re, Im, residual_values, 'EdgeColor', 'none');
-    title('目标函数值曲面图');
-    xlabel('Re(\omega)');
-    ylabel('Im(\omega)');
-    zlabel('||Residual||');
-    view(-30, 30);
-    colormap jet;
-    colorbar;
-    
-    % 等高线图
-    subplot(2,2,2);
-    contourf(Re, Im, log10(residual_values), 20);
-    title('对数坐标等高线图');
-    xlabel('Re(\omega)');
-    ylabel('Im(\omega)');
-    colorbar;
-    
-    % 二维投影图
-    subplot(2,2,4);
-    imagesc(realomg, imagomg, residual_values);
-    set(gca,'YDir','normal');
-    title('二维投影热图');
-    xlabel('Re(\omega)');
-    ylabel('Im(\omega)');
-    colorbar;
-    
-    % 保存图像
-    saveas(fig, fullfile('plots', 'residual_landscape.png'));
-    close(fig);
+    % 创建数据队列用于进度跟踪
+    progressQueue = parallel.pool.DataQueue;
+    afterEach(progressQueue, @updateProgress);
+    progressCount = 0;
+    totalStart = tic;
 
+    % 资源监测初始化
+    monitorTimer = timer('ExecutionMode', 'fixedRate', 'Period', 5, ...
+        'TimerFcn', @(x,y) monitorResources());
+    start(monitorTimer);
+    try
+        % 并行计算主循环
+        parfor k = 1:total_points
+            current_omega = omega_list(k);
+            % 将参数显式传递进目标函数
+            residual = shooting_objective(current_omega, deri, options);
+            residual_flat(k) = norm(residual);
+            
+            % 进度更新
+            send(progressQueue, []);
+        end
+
+        % 结果重构为二维矩阵
+        residual_values = reshape(residual_flat, size(Re));
+
+        % 终止资源监控
+        stop(monitorTimer);
+        delete(monitorTimer);
+        % ========== 三维可视化 ==========
+        fig = figure('Position', [100 100 1200 800]);
+        
+        % 曲面图
+        subplot(2,2,[1 3]);
+        surf(Re, Im, residual_values, 'EdgeColor', 'none');
+        title('目标函数值曲面图');
+        xlabel('Re(\omega)');
+        ylabel('Im(\omega)');
+        zlabel('||Residual||');
+        view(-30, 30);
+        colormap jet;
+        colorbar;
+        
+        % 等高线图
+        subplot(2,2,2);
+        contourf(Re, Im, log10(residual_values), 20);
+        title('对数坐标等高线图');
+        xlabel('Re(\omega)');
+        ylabel('Im(\omega)');
+        colorbar;
+        
+        % 二维投影图
+        subplot(2,2,4);
+        imagesc(realomg, imagomg, residual_values);
+        set(gca,'YDir','normal');
+        title('二维投影热图');
+        xlabel('Re(\omega)');
+        ylabel('Im(\omega)');
+        colorbar;
+        
+        % 保存图像
+        saveas(fig, fullfile('plots', 'residual_landscape.png'));
+        close(fig);
+    catch ME
+        % 异常处理
+        stop(monitorTimer);
+        delete(monitorTimer);
+        rethrow(ME);
+    end
+    % 资源监控函数
+    function monitorResources()
+        try
+            % Windows系统
+            [~, cmdout] = system('wmic OS get FreePhysicalMemory,TotalVisibleMemorySize /value');
+            mem_info = regexp(cmdout, '(\d+)', 'match');
+            total_mem = str2double(mem_info{2})/1024; % MB
+            free_mem = str2double(mem_info{1})/1024;
+            
+            [~, cpu_info] = system('wmic cpu get LoadPercentage /value');
+            cpu_load = regexp(cpu_info, '(\d+)', 'match');
+            
+            fprintf('[资源监控] 内存使用: %.1f/%.1f MB | CPU负载: %s%%\n',...
+                   total_mem-free_mem, total_mem, cpu_load{1});
+        catch
+            fprintf('资源监控仅支持Windows系统\n');
+        end
+    end
+    % 进度更新函数
+    function updateProgress(~)
+        progressCount = progressCount + 1;
+        elapsed = toc(totalStart);
+        remaining = (elapsed/progressCount)*(total_points - progressCount);
+        
+        fprintf('进度: %.1f%%, 已用时间: %.1fs, 预计剩余: %.1fs\n',...
+               progressCount/total_points*100,...
+               elapsed,...
+               remaining);
+    end
+
+end
     % 嵌套函数保持与原始代码一致
     function residual = shooting_objective(omega, deri, options)
         [~, Er] = ode15s(@(x, Er) evfun(x, Er, omega), [0, 1], [0, deri], options);
@@ -121,4 +179,3 @@ function shootev_search2d()
 
         yy = [Er(2); -a3/a1 * Er(1)];
     end
-end
