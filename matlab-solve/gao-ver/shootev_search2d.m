@@ -7,8 +7,8 @@ function shootev_search2d()
     end
 
     % 定义实部 虚部 参数扫描范围
-    realomg = linspace(1.76, 1.94, 25);
-    imagomg = linspace(-4.2e-2, -1.5e-2, 12);
+    realomg = linspace(1.76, 1.94, 3);
+    imagomg = linspace(-4.2e-2, -1.5e-2, 2);
     [Re, Im] = meshgrid(realomg, imagomg);    % 生成网格
     
     % 初始化存储矩阵
