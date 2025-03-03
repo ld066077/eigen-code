@@ -9,7 +9,11 @@ function tt = shootev_search2d()
         mkdir('plots');
     end
 
-    omega_initial = 1.8 - 0.001i;
+
+    realomg = linspace(1.76, 1.94, 25);
+    imagomg = linspace(-4.2e-2, -1.5e-2, 12);
+
+    disp(realomg);
     deri = 0.0001 + 0.00001i;
     options = odeset('AbsTol', 1e-8, 'RelTol', 1e-8, 'OutputFcn',[]); % 'OutputFcn',[] 抑制输出
 
