@@ -1,83 +1,80 @@
-function tt = shootev_search2d()
+function shootev_search2d()
     format long;
-    tol = 1.5e-4;
-    m = 1;
-    omg_log = zeros(1, m) + 1i * zeros(1, m);
-
-    % 如果 'plots' 目录不存在，创建它
+    
+    % 创建plots目录
     if ~exist('plots', 'dir')
         mkdir('plots');
     end
 
-
+    % 定义实部 虚部 参数扫描范围
     realomg = linspace(1.76, 1.94, 25);
     imagomg = linspace(-4.2e-2, -1.5e-2, 12);
-
-    disp(realomg);
+    [Re, Im] = meshgrid(realomg, imagomg);    % 生成网格
+    
+    % 初始化存储矩阵
+    residual_values = zeros(size(Re));
+    
+    % ODE求解参数
     deri = 0.0001 + 0.00001i;
-    options = odeset('AbsTol', 1e-8, 'RelTol', 1e-8, 'OutputFcn',[]); % 'OutputFcn',[] 抑制输出
+    options = odeset('AbsTol', 1e-8, 'RelTol', 1e-8);
 
-    for n = 1:m
-        % 使用 fsolve 进行根查找
-        objective_fun = @(omega) shooting_objective(omega, deri, options); % 嵌套函数，减少计算量，计算evfun时omega为定值
-        objf = shooting_objective(omega_initial, deri, options);
-        disp(objf);
-        omega = fsolve(objective_fun, omega_initial, optimoptions('fsolve', 'Display', 'iter', 'FunctionTolerance', tol, 'StepTolerance', tol));
-
-        omg_log(n) = omega;
-        omega_initial = omega;  % 更新为下一个特征值 +domg
-
-        % 使用找到的特征值*一次*求解ODE
-        [x, Er] = ode15s(@(x, Er) evfun(x, Er, omega), [0, 1], [0, deri], options);
-
-        % 绘图和保存
-        fig = figure('Visible', 'off');
-        plot(x, real(Er(:, 1)), 'LineWidth', 1.5, 'DisplayName', '实部');
-        hold on;
-        plot(x, imag(Er(:, 1)), 'LineWidth', 1.5, 'DisplayName', '虚部');
-        title(sprintf('omega=%.6f + %.6fi', real(omega), imag(omega))); % 改进的格式化
-        xlabel('x');
-        ylabel('Er(x)');
-        legend('show');
-        grid on;
-        saveas(fig, fullfile('plots', sprintf('eigenfunc_%d.png', n)));
-        close(fig);
+    % 遍历所有网格点
+    for i = 1:size(Re, 1)
+        for j = 1:size(Re, 2)
+            % 构造当前复数频率
+            current_omega = Re(i,j) + 1i*Im(i,j);
+            
+            % 计算目标函数值（使用残差的模）
+            residual = shooting_objective(current_omega, deri, options);
+            residual_values(i,j) = norm(residual); % 计算残差的2-范数
+        end
+        fprintf('已完成 %.1f%%\n', 100*i/size(Re,1)); % 进度显示
     end
-    objf = shooting_objective(omega, deri, options);
-    disp(objf);
-    tt = omg_log;
-    disp(tt);
 
-   % 组合绘图（为每个存储的 omg 值*一次*求解ODE）
-    composite_fig = figure('Visible', 'off');
-    hold on;
-    colors = lines(m); % 使用 'lines' 颜色图生成不同的颜色
-    for n = 1:m
-        [x, Er] = ode15s(@(x, Er) evfun(x, Er, omg_log(n)), [0, 1], [0, deri], options);
-        Er(:, 1) = Er(:, 1) / max(abs(Er(:, 1)));
-        plot(x, real(Er(:, 1)), 'Color', colors(n,:), 'LineWidth', 1.2, 'DisplayName', sprintf('Re(omega)=%.4f', real(omg_log(n))));
-        plot(x, imag(Er(:, 1)), 'Color', colors(n,:), 'LineStyle', '--', 'LineWidth', 1.2, 'DisplayName', sprintf('Im(omega)=%.4f', imag(omg_log(n))));
-    end
-    title('组合特征函数'); % 一致的标题
-    xlabel('x');
-    ylabel('Er(x)');
-    legend('show', 'Location', 'best');
-    grid on;
-    saveas(composite_fig, fullfile('plots', 'composite_eigenfuncs.png'));
-    close(composite_fig);
+    % ========== 三维可视化 ==========
+    fig = figure('Position', [100 100 1200 800]);
+    
+    % 曲面图
+    subplot(2,2,[1 3]);
+    surf(Re, Im, residual_values, 'EdgeColor', 'none');
+    title('目标函数值曲面图');
+    xlabel('Re(\omega)');
+    ylabel('Im(\omega)');
+    zlabel('||Residual||');
+    view(-30, 30);
+    colormap jet;
+    colorbar;
+    
+    % 等高线图
+    subplot(2,2,2);
+    contourf(Re, Im, log10(residual_values), 20);
+    title('对数坐标等高线图');
+    xlabel('Re(\omega)');
+    ylabel('Im(\omega)');
+    colorbar;
+    
+    % 二维投影图
+    subplot(2,2,4);
+    imagesc(realomg, imagomg, residual_values);
+    set(gca,'YDir','normal');
+    title('二维投影热图');
+    xlabel('Re(\omega)');
+    ylabel('Im(\omega)');
+    colorbar;
+    
+    % 保存图像
+    saveas(fig, fullfile('plots', 'residual_landscape.png'));
+    close(fig);
 
-
+    % 嵌套函数保持与原始代码一致
     function residual = shooting_objective(omega, deri, options)
-        % 嵌套函数，用于计算 fsolve 的残差
         [~, Er] = ode15s(@(x, Er) evfun(x, Er, omega), [0, 1], [0, deri], options);
-        residual = Er(end, 1);  % 残差是边界处的值
-        residual = [1000*real(residual); imag(residual)]; % 将实部和虚部分开以便 fsolve 使用
+        boundary_value = Er(end, 1);
+        residual = [real(boundary_value); imag(boundary_value)]; % 保持二维残差
     end
-
-
 
     function yy = evfun(x, Er, omg_val)
-        % 预先计算依赖于 x 和 omg_val 的量
+        % 保持原有物理模型计算不变
         rho0 = 0.01;
         tau = 1.0;
         q = 1.5*(1.0+x);
