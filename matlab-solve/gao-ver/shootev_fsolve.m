@@ -16,6 +16,8 @@ function tt = shootev()
     for n = 1:m
         % 使用 fsolve 进行根查找
         objective_fun = @(omega) shooting_objective(omega, deri, options); % 嵌套函数，减少计算量，计算evfun时omega为定值
+        objf = shooting_objective(omega_initial, deri, options);
+        disp(objf);
         omega = fsolve(objective_fun, omega_initial, optimoptions('fsolve', 'Display', 'iter', 'FunctionTolerance', tol, 'StepTolerance', tol));
 
         omg_log(n) = omega;
@@ -37,7 +39,8 @@ function tt = shootev()
         saveas(fig, fullfile('plots', sprintf('eigenfunc_%d.png', n)));
         close(fig);
     end
-
+    objf = shooting_objective(omega, deri, options);
+    disp(objf);
     tt = omg_log;
     disp(tt);
 
@@ -64,7 +67,7 @@ function tt = shootev()
         % 嵌套函数，用于计算 fsolve 的残差
         [~, Er] = ode15s(@(x, Er) evfun(x, Er, omega), [0, 1], [0, deri], options);
         residual = Er(end, 1);  % 残差是边界处的值
-        residual = [real(residual); imag(residual)]; % 将实部和虚部分开以便 fsolve 使用
+        residual = [1000*real(residual); imag(residual)]; % 将实部和虚部分开以便 fsolve 使用
     end
 
 
@@ -73,8 +76,8 @@ function tt = shootev()
         % 预先计算依赖于 x 和 omg_val 的量
         rho0 = 0.01;
         tau = 1.0;
-        q = 1.05 + 4*x.^2;
-        T = 0.2 + 0.8*(1 - x.^2).^2;
+        q = 1.5*(1.0+x);
+        T = 1.0*(1.005-x);
 
         zeta_val = q*omg_val/sqrt(T);
         Zdf = -2*dawson(zeta_val) + 1i*sqrt(pi)*exp(-zeta_val.^2);
