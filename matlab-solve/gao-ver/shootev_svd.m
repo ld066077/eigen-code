@@ -2,7 +2,7 @@ function tt = shootev_svd()
     format long;
     tol = 1.5e-4;
     m = 1;
-    N = 100; % 离散化点数
+    N = 1000; % 离散化点数
     omg_log = zeros(1, m) + 1i * zeros(1, m);
     omega_initial = 1.8 - 0.001i;
     % 创建plots目录（如果不存在）
@@ -78,6 +78,8 @@ function residual = svd_objective(omega, N)
     K = construct_matrix(omega, N);
     [~, S, ~] = svd(K);
     sigma_min = min(diag(S));
+    % disp('最小奇异值:');
+    % disp(S(end, end));
     residual = sigma_min;
 end
 
