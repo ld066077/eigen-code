@@ -126,11 +126,11 @@ function K = construct_matrix(omega, N)
     K = spalloc(N, N, 3*N);
     
     for i = 2:N-1
-        [~, a3] = compute_coefficients(x_nodes(i), omega);
+        [a1, a3] = compute_coefficients(x_nodes(i), omega);
         % 二阶中心差分格式
-        K(i, i-1) = -a3/(dx^2);
-        K(i, i)   =  2*a3/(dx^2);
-        K(i, i+1) = -a3/(dx^2);
+        K(i, i-1) = a1;
+        K(i, i)   =  -2.0*a1 + dx^2*a3;
+        K(i, i+1) = a1;
     end
     
     % 边界条件（Dirichlet）
