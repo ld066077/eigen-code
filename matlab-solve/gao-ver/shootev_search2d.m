@@ -7,8 +7,8 @@ function shootev_search2d()
     end
 
     % 定义参数扫描范围
-    realomg = linspace(1.76, 1.94, 30);    % 实部扫描范围
-    imagomg = linspace(-4.2e-2, -1.5e-2,30); % 虚部扫描范围
+    realomg = linspace(1.6, 2.0, 100);    % 实部扫描范围
+    imagomg = linspace(-5e-2, -1.0e-10,100); % 虚部扫描范围
     [Re, Im] = meshgrid(realomg, imagomg);    % 生成网格
     
     % 将二维网格展平为一维数组以便并行处理
