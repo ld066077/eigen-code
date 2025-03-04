@@ -1,6 +1,6 @@
 function tt = shootev_fsolve()
     format long;
-    tol = 1.5e-4;
+    tol = 1.0e-13;
     m = 1;
     omg_log = zeros(1, m) + 1i * zeros(1, m);
 
@@ -67,7 +67,7 @@ function tt = shootev_fsolve()
         % 嵌套函数，用于计算 fsolve 的残差
         [~, Er] = ode15s(@(x, Er) evfun(x, Er, omega), [0, 1], [0, deri], options);
         residual = Er(end, 1);  % 残差是边界处的值
-        residual = [1000*real(residual); imag(residual)]; % 将实部和虚部分开以便 fsolve 使用
+        residual = real(residual)^2 + imag(residual)^2; % 将实部和虚部分开以便 fsolve 使用
     end
 
 
