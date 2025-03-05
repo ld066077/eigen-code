@@ -7,7 +7,7 @@ function shootev_search2d()
     end
 
     % 定义参数扫描范围
-    omg = linspace(0.42, 0.46, 1000);
+    omg = linspace(0.7, 0.72, 1000);
 
     % 将二维网格展平为一维数组以便并行处理
     omega_list = omg;
