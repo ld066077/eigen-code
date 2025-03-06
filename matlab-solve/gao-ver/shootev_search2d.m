@@ -17,7 +17,7 @@ function shootev_search2d()
     residual_flat = zeros(total_points, 1);
     
     % ODE求解参数
-    deri = 0.01 + 0.001i;
+    deri = 0.0001 + 0.001i;
     options = odeset('AbsTol', 1e-8, 'RelTol', 1e-8);
 
     % 启动并行池
