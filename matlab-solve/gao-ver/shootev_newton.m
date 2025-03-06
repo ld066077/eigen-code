@@ -1,4 +1,4 @@
-function shootev_search2d()
+function shootev_newton()
     format long;
     
     % 创建plots目录
@@ -7,52 +7,35 @@ function shootev_search2d()
     end
 
     % 定义参数扫描范围
-    realomg = linspace(1.4, 1.8, 40);    % 实部扫描范围
-    imagomg = linspace(-12.0e-2, -5.0e-6,40); % 虚部扫描范围
-    [Re, Im] = meshgrid(realomg, imagomg);    % 生成网格
-    
-    % 将二维网格展平为一维数组以便并行处理
-    omega_list = Re(:) + 1i*Im(:);
-    total_points = numel(omega_list);
-    residual_flat = zeros(total_points, 1);
-    
+    realomg = 1.8;    % 实部初始值
+    imagomg = -0.1; % 虚部初始值
+    domg = 0.1-0.001i;
+
+    omgint = realomg + 1i*imagomg;
+
     % ODE求解参数
     deri = 0.0001 + 0.00001i;
     options = odeset('AbsTol', 1e-8, 'RelTol', 1e-8);
 
-    % 启动并行池
-    if isempty(gcp('nocreate'))
-        parpool; % 根据系统核心数自动分配
+    omgnext = omgint;
+    maxiter = 100;
+    for k = 1:maxiter
+        currentomg = omgnext;
+        % 将参数显式传递进目标函数
+        currentresidual = shooting_objective(currentomg, deri, options);
+        tmpomg = currentomg + domg;
+        tmpresidual = shooting_objective(tmpomg, deri, options);
+        deriomg = -domg*currentresidual/(tmpresidual - currentresidual);
+        comomg = omgnext;
+        omgnext = omgnext + deriomg;
+        
+        if (abs(comomg-omgnext)<1.0e-5)
+            break;
+        end
     end
 
-    % 创建数据队列用于进度跟踪
-    progressQueue = parallel.pool.DataQueue;
-    afterEach(progressQueue, @updateProgress);
-    progressCount = 0;
-    totalStart = tic;
 
-    % 资源监测初始化
-    monitorTimer = timer('ExecutionMode', 'fixedRate', 'Period', 5, ...
-        'TimerFcn', @(x,y) monitorResources());
-    start(monitorTimer);
-    try
-        % 并行计算主循环
-        parfor k = 1:total_points
-            current_omega = omega_list(k);
-            % 将参数显式传递进目标函数
-            residual = shooting_objective(current_omega, deri, options);
-            residual_flat(k) = norm(residual);
-            
-            % 进度更新
-            send(progressQueue, []);
-        end
 
-        % 结果重构为二维矩阵
-        residual_values = reshape(residual_flat, size(Re));
-
-        % 终止资源监控
-        stop(monitorTimer);
-        delete(monitorTimer);
         % ========== 三维可视化 ==========
         fig = figure('Position', [100 100 1200 800]);
         
@@ -87,48 +70,13 @@ function shootev_search2d()
         % 保存图像
         saveas(fig, fullfile('plots', 'residual_landscape.png'));
         close(fig);
-    catch ME
-        % 异常处理
-        stop(monitorTimer);
-        delete(monitorTimer);
-        rethrow(ME);
-    end
-    % 资源监控函数
-    function monitorResources()
-        try
-            % Windows系统
-            [~, cmdout] = system('wmic OS get FreePhysicalMemory,TotalVisibleMemorySize /value');
-            mem_info = regexp(cmdout, '(\d+)', 'match');
-            total_mem = str2double(mem_info{2})/1024; % MB
-            free_mem = str2double(mem_info{1})/1024;
-            
-            [~, cpu_info] = system('wmic cpu get LoadPercentage /value');
-            cpu_load = regexp(cpu_info, '(\d+)', 'match');
-            
-            fprintf('[资源监控] 内存使用: %.1f/%.1f MB | CPU负载: %s%%\n',...
-                   total_mem-free_mem, total_mem, cpu_load{1});
-        catch
-            fprintf('资源监控仅支持Windows系统\n');
-        end
-    end
-    % 进度更新函数
-    function updateProgress(~)
-        progressCount = progressCount + 1;
-        elapsed = toc(totalStart);
-        remaining = (elapsed/progressCount)*(total_points - progressCount);
-        
-        fprintf('进度: %.1f%%, 已用时间: %.1fs, 预计剩余: %.1fs\n',...
-               progressCount/total_points*100,...
-               elapsed,...
-               remaining);
-    end
+
 
 end
     % 嵌套函数保持与原始代码一致
     function residual = shooting_objective(omega, deri, options)
         [~, Er] = ode15s(@(x, Er) evfun(x, Er, omega), [0, 1], [0, deri], options);
-        boundary_value = Er(end, 1);
-        residual = [real(boundary_value); imag(boundary_value)]; % 保持二维残差
+        residual = Er(end, 1); % 改为直接返回残差
     end
 
     function yy = evfun(x, Er, omg_val)

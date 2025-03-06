@@ -7,7 +7,7 @@ function shootev_search2d()
     end
 
         % 定义参数扫描范围
-        realomg = linspace(1.4, 1.8, 40);    % 实部扫描范围
+        realomg = linspace(1.4, 2.0, 60);    % 实部扫描范围
         imagomg = linspace(-12.0e-2, -5.0e-6,40); % 虚部扫描范围
         [Re, Im] = meshgrid(realomg, imagomg);    % 生成网格
         
@@ -135,7 +135,7 @@ end
         % 保持原有物理模型计算不变
         rho0 = 0.01;
         tau = 1.0;
-        M_T = 1;
+        M_T = 0.0;
         q = 1.05 + 4*x.^2;
         T = 0.2 + 0.8*(1 - x.^2).^2;
         M_val = M_T/sqrt(T);
