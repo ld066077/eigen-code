@@ -32,7 +32,7 @@ function shootev_newton()
         disp(comomg);
         disp(abs(comomg-omgnext));
         disp('-------');
-        if (abs(comomg-omgnext)<1.0e-6)
+        if (abs(comomg-omgnext)<1.0e-6) % 收敛条件tol
             break;
         end
     end
