@@ -9,7 +9,7 @@ function shootev_newton()
     % 定义参数扫描范围
     realomg = 1.8;    % 实部初始值
     imagomg = -0.1; % 虚部初始值
-    domg = 0.1-0.001i;
+    domg = 0.01-0.002i;
 
     omgint = realomg + 1i*imagomg;
 
@@ -28,49 +28,29 @@ function shootev_newton()
         deriomg = -domg*currentresidual/(tmpresidual - currentresidual);
         comomg = omgnext;
         omgnext = omgnext + deriomg;
-        
-        if (abs(comomg-omgnext)<1.0e-5)
+        disp(k);
+        disp(comomg);
+        disp(abs(comomg-omgnext));
+        disp('-------');
+        if (abs(comomg-omgnext)<1.0e-6)
             break;
         end
     end
-
-
-
-        % ========== 三维可视化 ==========
-        fig = figure('Position', [100 100 1200 800]);
-        
-        % 曲面图
-        subplot(2,2,[1 3]);
-        surf(Re, Im, residual_values, 'EdgeColor', 'none');
-        title('目标函数值曲面图');
-        xlabel('Re(\omega)');
-        ylabel('Im(\omega)');
-        zlabel('||Residual||');
-        view(-30, 30);
-        colormap jet;
-        colorbar;
-        
-        % 等高线图
-        subplot(2,2,2);
-        contourf(Re, Im, log10(residual_values), 20);
-        title('对数坐标等高线图');
-        xlabel('Re(\omega)');
-        ylabel('Im(\omega)');
-        colorbar;
-        
-        % 二维投影图
-        subplot(2,2,4);
-        imagesc(realomg, imagomg, residual_values);
-        set(gca,'YDir','normal');
-        title('二维投影热图');
-        xlabel('Re(\omega)');
-        ylabel('Im(\omega)');
-        colorbar;
-        
-        % 保存图像
-        saveas(fig, fullfile('plots', 'residual_landscape.png'));
-        close(fig);
-
+    [~, Er] = ode15s(@(x, Er) evfun(x, Er, currentomg), [0, 1], [0, deri], options);
+    x = linspace(0, 1, length(Er));
+    % 绘图并保存（使用存储的x和Er）
+    % fig = figure('Visible', 'off');
+    % Er(:, 1) = Er(:, 1) / max(abs(Er(:, 1)));  % 归一化
+    plot(x, real(Er(:, 1)), 'LineWidth', 1.5, 'DisplayName', 'Real');
+    hold on;
+    plot(x, imag(Er(:, 1)), 'LineWidth', 1.5, 'DisplayName', 'Imag');
+    title(sprintf('omega=%.4f + %.4fi', real(currentomg), imag(currentomg)));
+    xlabel('x');
+    ylabel('Er(x)');
+    legend('show');
+    grid on;
+    % saveas(fig, fullfile('plots', sprintf('eigenfunc.png')));
+    % close(fig);
 
 end
     % 嵌套函数保持与原始代码一致
