@@ -40,8 +40,8 @@ function tt = shoot_p()
         Zdf = @(zeta_val) -2*dawson(zeta_val) + 1i*sqrt(pi)*exp(-zeta_val.^2);
         rho0 = 0.01;
         tau = 1.0;
-        q = @(x) 1.05 + 4*x.^2;
-        T = @(x) 0.2 + 0.8*(1 - x.^2).^2;
+        q = @(x) 1.5*(1.0+x);%1.05 + 4*x.^2;
+        T = @(x) 1.0*(1.005-x);%0.2 + 0.8*(1 - x.^2).^2;
 
         rho = sqrt(T(x))*rho0;
         a1 = rho*rho;
