@@ -10,8 +10,8 @@ function shootev_search2d()
 
     % ODE求解参数
     % 定义参数扫描范围
-    reald = linspace(1, -1, 40);    % 实部扫描范围
-    imagd = linspace(1, -1, 40); % 虚部扫描范围
+    reald = linspace(0.0004, -0.0004, 20);    % 实部扫描范围
+    imagd = linspace(0.0004, -0.0004, 20); % 虚部扫描范围
     [Re, Im] = meshgrid(reald, imagd);    % 生成网格
     deri_list = Re(:) + 1i*Im(:);
     total_points = numel(deri_list);
@@ -75,7 +75,7 @@ function shootev_search2d()
         
         % 二维投影图
         subplot(2,2,4);
-        imagesc(realomg, imagomg, residual_values);
+        imagesc(reald, imagd, residual_values);
         set(gca,'YDir','normal');
         title('二维投影热图');
         xlabel('Re(deri)');
@@ -84,7 +84,7 @@ function shootev_search2d()
         
         % 保存图像
         saveas(fig, fullfile('plots', 'residual_landscape.png'));
-        close(fig);
+        % close(fig);
     catch ME
         % 异常处理
         stop(monitorTimer);
