@@ -9,8 +9,8 @@ function tt = shoot_p()
         mkdir('plots');
     end
 
-    omega_initial = 1.69 - 0.065i; % k的初始值
-    deri = 0.0001 + 0.00001i;
+    omega_initial = 1.825833489577557 - 0.090343626229904i; % k的初始值
+    deri = - 0.000105263 - 2.10526e-5i;
 
     omega = omega_initial;
 
