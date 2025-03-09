@@ -85,7 +85,7 @@ function shootev_search2d()
         colorbar;
         
         % 保存图像
-        saveas(fig, fullfile('plots', 'residual_landscape.png'));
+        savefig(fig, fullfile('plots', 'residual_landscape.fig'));
         close(fig);
     catch ME
         % 异常处理
