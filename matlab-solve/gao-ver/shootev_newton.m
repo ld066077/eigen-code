@@ -7,8 +7,8 @@ function shootev_newton()
     end
 
     % 定义参数扫描范围
-    realomg = 1.8;    % 实部初始值
-    imagomg = -0.1; % 虚部初始值
+    realomg = 1.44211;%1.8;    % 实部初始值
+    imagomg = -0.0378982;%-0.1; % 虚部初始值
     domg = 0.01-0.002i;
 
     omgint = realomg + 1i*imagomg;
