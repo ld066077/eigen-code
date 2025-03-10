@@ -1,4 +1,4 @@
-function shootev_search2d()
+function shootderi_searcg2d()
     format long;
     
     % 创建plots目录
